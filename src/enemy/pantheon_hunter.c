@@ -18,22 +18,22 @@ static const struct SlashedEnemy sSlashedEnemies[4];
 
 static void onCollision(struct Body* body UNUSED, Coords32* r1 UNUSED, Coords32* r2 UNUSED);
 
-static void PantheonHunter_Init(struct Enemy* p);
-static void PantheonHunter_Update(struct Enemy* p);
-void PantheonHunter_Die(struct Enemy* p);
+static void PantheonHunter_Init(PantheonHunter* p);
+static void PantheonHunter_Update(PantheonHunter* p);
+void PantheonHunter_Die(PantheonHunter* p);
 
 // clang-format off
 const EnemyRoutine gPantheonHunterRoutine = {
-    [ENTITY_INIT] =      PantheonHunter_Init,
-    [ENTITY_UPDATE] =    PantheonHunter_Update,
-    [ENTITY_DIE] =       PantheonHunter_Die,
+    [ENTITY_INIT] =      (void*)PantheonHunter_Init,
+    [ENTITY_UPDATE] =    (void*)PantheonHunter_Update,
+    [ENTITY_DIE] =       (void*)PantheonHunter_Die,
     [ENTITY_DISAPPEAR] = (void*)DeleteEnemy,
     [ENTITY_EXIT] =      (EnemyFunc)DeleteEntity,
 };
 // clang-format on
 
 struct Entity* CreatePantheonHunter(Coords32* c, u8 r1, u8 r2) {
-  struct Entity* p = AllocEntityLast(gEnemyHeaderPtr);
+  struct Entity* p = (struct Entity*)AllocEntityLast(gEnemyHeaderPtr);
   if (p != NULL) {
     INIT_ENEMY_ROUTINE(p, ENEMY_P_HUNTER);
     p->coord = *c;
@@ -43,7 +43,7 @@ struct Entity* CreatePantheonHunter(Coords32* c, u8 r1, u8 r2) {
   return p;
 }
 
-NAKED static void PantheonHunter_Init(struct Enemy* p) {
+static void PantheonHunter_Init(PantheonHunter* p) {
   asm(".syntax unified\n\
 	push {r4, r5, r6, lr}\n\
 	adds r6, r0, #0\n\
@@ -225,39 +225,39 @@ _08064828:\n\
 
 // --------------------------------------------
 
-void FUN_08064c38(struct Enemy* p);
-void nop_08064ca8(struct Enemy* p);
-void phunter_08064cac(struct Enemy* p);
-void FUN_08064e0c(struct Enemy* p);
-void nop_08064e34(struct Enemy* p);
-void FUN_08064e38(struct Enemy* p);
-void FUN_08064e7c(struct Enemy* p);
-void phunterRaiseArm(struct Enemy* p);
-void phunterShotBuster(struct Enemy* p);
-void FUN_08065104(struct Enemy* p);
-void phunter_080651c0(struct Enemy* p);
-void phunter_08065218(struct Enemy* p);
-void phunter_080652e8(struct Enemy* p);
+void FUN_08064c38(PantheonHunter* p);
+void nop_08064ca8(PantheonHunter* p);
+void phunter_08064cac(PantheonHunter* p);
+void FUN_08064e0c(PantheonHunter* p);
+void nop_08064e34(PantheonHunter* p);
+void FUN_08064e38(PantheonHunter* p);
+void FUN_08064e7c(PantheonHunter* p);
+void phunterRaiseArm(PantheonHunter* p);
+void phunterShotBuster(PantheonHunter* p);
+void FUN_08065104(PantheonHunter* p);
+void phunter_080651c0(PantheonHunter* p);
+void phunter_08065218(PantheonHunter* p);
+void phunter_080652e8(PantheonHunter* p);
 
 // clang-format off
 static const EnemyFunc sUpdates[13] = {
-    FUN_08064c38,
-    nop_08064ca8,
-    phunter_08064cac,
-    FUN_08064e0c,
-    nop_08064e34,
-    FUN_08064e38,
-    FUN_08064e7c,
-    phunterRaiseArm,
-    phunterShotBuster,
-    FUN_08065104,
-    phunter_080651c0,
-    phunter_08065218,
-    phunter_080652e8,
+    (EnemyFunc)FUN_08064c38,
+    (EnemyFunc)nop_08064ca8,
+    (EnemyFunc)phunter_08064cac,
+    (EnemyFunc)FUN_08064e0c,
+    (EnemyFunc)nop_08064e34,
+    (EnemyFunc)FUN_08064e38,
+    (EnemyFunc)FUN_08064e7c,
+    (EnemyFunc)phunterRaiseArm,
+    (EnemyFunc)phunterShotBuster,
+    (EnemyFunc)FUN_08065104,
+    (EnemyFunc)phunter_080651c0,
+    (EnemyFunc)phunter_08065218,
+    (EnemyFunc)phunter_080652e8,
 };
 // clang-format on
 
-NAKED static void PantheonHunter_Update(struct Enemy* p) {
+static void PantheonHunter_Update(PantheonHunter* p) {
   asm(".syntax unified\n\
 	push {r4, r5, r6, r7, lr}\n\
 	adds r5, r0, #0\n\
@@ -562,8 +562,8 @@ _08064AC8: .4byte sUpdates\n\
 
 // --------------------------------------------
 
-void explodePHunter(struct Enemy* p);
-void slashPHunter(struct Enemy* p);
+void explodePHunter(PantheonHunter* p);
+void slashPHunter(PantheonHunter* p);
 static void FUN_080656cc(struct Entity* p);
 
 static const EnemyFunc sDeads[3] = {
@@ -572,7 +572,26 @@ static const EnemyFunc sDeads[3] = {
     (EnemyFunc)FUN_080656cc,
 };
 
-INCASM("asm/enemy/pantheon_hunter.inc");
+INCASM("asm/enemy/pantheon_hunter_a.inc");
+
+void FUN_08064e38(PantheonHunter* p) {
+  u8 m = p->mode[2];
+  if (m == 0) {
+    SetMotion((struct Entity*)p, 0x1300);
+    p->work[2] = 0x1E;
+    p->d.y = m;
+    p->d.x = m;
+    p->mode[2]++;
+  }
+  UpdateEntityAnim((struct Entity*)p);
+  p->work[2]--;
+  if (p->work[2] == 0xFF) {
+    p->mode[1] = p->mode[3];
+    p->mode[2] = 0;
+  }
+}
+
+INCASM("asm/enemy/pantheon_hunter_b.inc");
 
 // 0x080656cc
 static void FUN_080656cc(struct Entity* p) {
