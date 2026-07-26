@@ -3,6 +3,7 @@
 #include "global.h"
 #include "projectile.h"
 #include "story.h"
+#include "vfx.h"
 
 static const struct Collision sCollisions[2];
 
@@ -21,7 +22,7 @@ const ProjectileRoutine gShotcounterBulletRoutine = {
 // clang-format on
 
 Entity* CreateShotcounterBullet(Coords32* c, Coords32* d, u8 r2, u8 r3) {
-  Entity* p = AllocEntityLast(gProjectileHeaderPtr);
+  Entity* p = (Entity*)AllocEntityLast(gProjectileHeaderPtr);
   if (p != NULL) {
     INIT_PROJECTILE_ROUTINE(p, PROJECTILE_SHOTCOUNTER_BULLET);
     p->work[0] = r2;
@@ -34,7 +35,7 @@ Entity* CreateShotcounterBullet(Coords32* c, Coords32* d, u8 r2, u8 r3) {
   return p;
 }
 
-NAKED static void ShotcounterBullet_Init(Projectile* p) {
+static void ShotcounterBullet_Init(Projectile* p) {
   asm(".syntax unified\n\
 	push {r4, r5, r6, r7, lr}\n\
 	adds r6, r0, #0\n\
@@ -142,13 +143,50 @@ static void ShotcounterBullet_Update(Projectile* p) {
     p->flags &= ~DISPLAY;
     EXIT_BODY(p);
     SET_PROJECTILE_ROUTINE(p, ENTITY_DIE);
-    ShotcounterBullet_Die(p);
+    ShotcounterBullet_Die((Projectile*)p);
     return;
   }
-  (sUpdates[p->mode[1]])(p);
+  (sUpdates[p->mode[1]])((void*)p);
 }
 
-INCASM("asm/projectile/shotcounter_bullet.inc");
+INCASM("asm/projectile/shotcounter_bullet_a.inc");
+
+void FUN_0809ceb0(Projectile* p) {
+  if ((p->body).status & BODY_STATUS_DEAD) {
+    EXIT_BODY(p);
+    PlaySound(0x35);
+    CreateSmoke(2, &p->coord);
+    SET_PROJECTILE_ROUTINE(p, ENTITY_DIE);
+  } else if ((p->body).status & BODY_STATUS_B2) {
+    EXIT_BODY(p);
+    PlaySound(0x35);
+    CreateSmoke(2, &p->coord);
+    SET_PROJECTILE_ROUTINE(p, ENTITY_DIE);
+  } else if (--p->work[2] == 0) {
+    CreateSmoke(3, &p->coord);
+    SET_PROJECTILE_ROUTINE(p, ENTITY_DIE);
+  } else {
+    u16 r;
+    if (p->work[1] == 1 && (r = FUN_080098a4(p->coord.x, p->coord.y)) != 0 && !(r & MTATTR_SOFT_PLATFORM)) {
+      CreateSmoke(3, &p->coord);
+      SET_PROJECTILE_ROUTINE(p, ENTITY_DIE);
+    } else {
+      switch (p->mode[2]) {
+        case 0:
+          SetSpriteAnimation(p, MOTION(SM004_SHOTCOUNTER, 8));
+          p->mode[2]++;
+          // fallthrough
+        case 1:
+          p->coord.x += p->d.x;
+          p->coord.y += p->d.y;
+          UpdateEntityAnim((struct Entity*)p);
+          break;
+      }
+    }
+  }
+}
+
+INCASM("asm/projectile/shotcounter_bullet_b.inc");
 
 static const struct Collision sCollisions[2] = {
     {
