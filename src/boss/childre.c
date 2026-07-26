@@ -297,8 +297,8 @@ static void Childre_Update(Childre* p) {
     p->elfx = NULL;
   }
   if (!tryKillChildre(p)) {
-    (sUpdates1[p->mode[1]])(p);
-    (sUpdates2[p->mode[1]])(p);
+    (sUpdates1[p->mode[1]])((void*)p);
+    (sUpdates2[p->mode[1]])((void*)p);
   }
 }
 
@@ -310,7 +310,7 @@ static void Childre_Die(Childre* p) {
       childre_08042140,
       childre_08042224,
   };
-  (sDeads[p->mode[1]])(p);
+  (sDeads[p->mode[1]])((void*)p);
 }
 
 // --------------------------------------------
@@ -416,7 +416,7 @@ void childreMode0(Childre* p) {
 }
 
 // 0x08040A58
-WIP void childreMode1(Childre* p) {
+void childreMode1(Childre* p) {
 #ifdef ALWAYS_FALSE
   switch (p->mode[2]) {
     case 0: {
@@ -518,7 +518,26 @@ WIP void childreMode1(Childre* p) {
 #endif
 }
 
-INCASM("asm/boss/childre.inc");
+INCASM("asm/boss/childre_a.inc");
+
+void childreEndEarShot(Childre* p) {
+  switch (p->mode[2]) {
+    case 0:
+      SetDDP(&p->body, &sCollisions[1]);
+      SetSpriteAnimation(p, MOTION(0xa4, 0x16));
+      p->mode[2]++;
+      // fallthrough
+    case 1:
+      UpdateEntityAnim((struct Entity*)p);
+      if (p->motion.state == 3) {
+        p->mode[1] = 0;
+        p->mode[2] = 0;
+      }
+      break;
+  }
+}
+
+INCASM("asm/boss/childre_b.inc");
 
 // --------------------------------------------
 
