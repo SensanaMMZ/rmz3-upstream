@@ -32,9 +32,11 @@ const SolidRoutine gMobNPCRoutine = {
     [ENTITY_DISAPPEAR] = (SolidFunc)DeleteSolid,
     [ENTITY_EXIT] =      (SolidFunc)DeleteEntity,
 };
+
+void FUN_080da320(struct Solid* p);
 // clang-format on
 
-NAKED static void MobNPC_Init(struct Solid* p) {
+static void MobNPC_Init(struct Solid* p) {
   asm(".syntax unified\n\
 	push {r4, lr}\n\
 	adds r4, r0, #0\n\
@@ -188,7 +190,7 @@ static void mob_neutral_080d95a8(struct MobObject* p) {
   }
 }
 
-NAKED static void FUN_080d95f8(struct Solid* p) {
+static void FUN_080d95f8(struct Solid* p) {
   asm(".syntax unified\n\
 	push {r4, r5, lr}\n\
 	adds r4, r0, #0\n\
@@ -375,7 +377,27 @@ static void FUN_080d9734(struct MobObject* p) {
   }
 }
 
-INCASM("asm/solid/mob_npc.inc");
+INCASM("asm/solid/mob_npc_a.inc");
+
+void FUN_080da320(struct Solid* p) {
+  struct MobObject* m = (struct MobObject*)p;
+  struct Body* b;
+  (p->s).flags |= COLLIDABLE;
+  b = &p->body;
+  InitBody(b, sCollisions, &(p->s).coord, 1);
+  b->parent = (struct Entity*)p;
+  b->fn = NULL;
+  m->motion_be = sMotions[(p->s).work[0]];
+  *(motion_t*)&m->unk_0c[0] = sMotions[(p->s).work[0]];
+  *(motion_t*)&m->unk_0c[2] = sMotions[(p->s).work[0]];
+  m->unk_00[5] = 1;
+  m->unk_00[4] = 0;
+  m->unk_08 = 0;
+  (p->s).mode[1] = 0;
+  MobNPC_Update(p);
+}
+
+INCASM("asm/solid/mob_npc_b.inc");
 
 void andrew_080d9cd8(struct Solid* p);
 void alouette_080d9eb8(struct Solid* p);
