@@ -2,6 +2,9 @@
 #include "global.h"
 #include "projectile.h"
 
+static const ProjectileFunc PTR_ARRAY_0836c01c[6];
+static const ProjectileFunc PTR_ARRAY_0836c034[6];
+
 // CopyX (Fire Shot)
 
 void Projectile26_Init(Projectile* p);
@@ -28,7 +31,18 @@ void FUN_080a88a4(Entity* q, u8 param_2, u8 param_3) {
   }
 }
 
-INCASM("asm/projectile/copy_x_shot_fire.inc");
+INCASM("asm/projectile/copy_x_shot_fire_a.inc");
+
+void Projectile26_Init(Projectile* p) {
+  (PTR_ARRAY_0836c01c[p->work[0]])((void*)p);
+}
+
+void Projectile26_Update(Projectile* p) {
+  (PTR_ARRAY_0836c034[p->work[0]])((void*)p);
+  UpdateEntityAnim((struct Entity*)p);
+}
+
+INCASM("asm/projectile/copy_x_shot_fire_b.inc");
 
 void FUN_080a8a38(Projectile* p);
 void FUN_080a8b50(Projectile* p);
