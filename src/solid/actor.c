@@ -19,9 +19,9 @@ void Actor_Die(struct Solid* p);
 
 // clang-format off
 const SolidRoutine gScriptActorRoutine = {
-    [ENTITY_INIT] =      Actor_Init,
-    [ENTITY_UPDATE] =    Actor_Update,
-    [ENTITY_DIE] =       Actor_Die,
+    [ENTITY_INIT] =      (void*)Actor_Init,
+    [ENTITY_UPDATE] =    (void*)Actor_Update,
+    [ENTITY_DIE] =       (void*)Actor_Die,
     [ENTITY_DISAPPEAR] = (void*)DeleteSolid,
     [ENTITY_EXIT] =      (SolidFunc)DeleteEntity,
 };
@@ -128,7 +128,7 @@ static void Actor_Init(struct Solid* p) {
       [65] = initStaticActor,
   };
   // clang-format on
-  (sInitializers[(p->s).work[0]])(p);
+  (sInitializers[(p->s).work[0]])((void*)p);
   return;
 }
 
@@ -272,7 +272,7 @@ void Actor_Update(struct Solid* p) {
       [65] = Actor65_Update,
   };
   // clang-format on
-  (sUpdates[(p->s).work[0]])(p);
+  (sUpdates[(p->s).work[0]])((void*)p);
   return;
 }
 
@@ -351,7 +351,7 @@ void Actor_Die(struct Solid* p) {
       [65] = deleteActor,
   };
   // clang-format on
-  (sDeinitalizer[(p->s).work[0]])(p);
+  (sDeinitalizer[(p->s).work[0]])((void*)p);
 }
 
 // --------------------------------------------
@@ -366,9 +366,9 @@ u16 FUN_080d0934(struct Entity* p, motion_t m, u8 r2) {
     case 1: {
       UpdateSpriteAnimation(p);
       if (p->work[2] & 1) {
-        PaintEntityWhite(p);
+        PaintEntityWhite((struct Entity*)p);
       } else {
-        UpdateEntityPaletteID(p);
+        UpdateEntityPaletteID((struct Entity*)p);
       }
       p->work[2]--;
       if (p->work[2] == 0) {
@@ -387,7 +387,7 @@ u16 FUN_080d0934(struct Entity* p, motion_t m, u8 r2) {
     }
     case 3: {
       UpdateSpriteAnimation(p);
-      PaintEntityWhite(p);
+      PaintEntityWhite((struct Entity*)p);
       (p->spr).mag.x = p->work[2] * -4 + 0x120;
       (p->spr).mag.y = p->work[2] * 4 + 0xe0;
       if (--p->work[2] != 0) {
@@ -399,7 +399,7 @@ u16 FUN_080d0934(struct Entity* p, motion_t m, u8 r2) {
     }
     case 4: {
       UpdateSpriteAnimation(p);
-      PaintEntityWhite(p);
+      PaintEntityWhite((struct Entity*)p);
       (p->spr).mag.x = p->work[2] * 0x40 + 0x20;
       (p->spr).mag.y = p->work[2] * -0x20 + 0x160;
       if (--p->work[2] != 0) {
@@ -412,7 +412,7 @@ u16 FUN_080d0934(struct Entity* p, motion_t m, u8 r2) {
     }
     case 5: {
       UpdateSpriteAnimation(p);
-      PaintEntityWhite(p);
+      PaintEntityWhite((struct Entity*)p);
       (p->spr).mag.x = 0x20;
       (p->d).y -= 0x40;
       (p->coord).y += (p->d).y * 2;
@@ -440,7 +440,7 @@ NON_MATCH u16 FUN_080d0aa0(struct Entity* p, motion_t m, u8 r2) {
       SetSpriteAnimation(p, m);
       (p->spr).mag.x = 0x20;
       (p->spr).mag.y = 0x200;
-      PaintEntityWhite(p);
+      PaintEntityWhite((struct Entity*)p);
       (p->unk_coord).y = FUN_08009f6c((p->coord).x, (p->coord).y);
       (p->coord).y = gStageRun.vm.camera.viewport.y - PIXEL(96);
       p->mode[3]++;
@@ -490,9 +490,9 @@ NON_MATCH u16 FUN_080d0aa0(struct Entity* p, motion_t m, u8 r2) {
     case 5: {
       UpdateSpriteAnimation(p);
       if (p->work[2] & 1) {
-        UpdateEntityPaletteID(p);
+        UpdateEntityPaletteID((struct Entity*)p);
       } else {
-        PaintEntityWhite(p);
+        PaintEntityWhite((struct Entity*)p);
       }
       if (--p->work[2] == 0) {
         p->mode[3] = 0;
@@ -905,7 +905,7 @@ static void Actor7_Update(struct Solid* p) {
 
 // --------------------------------------------
 
-NAKED static void initActor8(struct Solid* p) {
+static void initActor8(struct Solid* p) {
   asm(".syntax unified\n\
 	push {r4, r5, r6, r7, lr}\n\
 	mov r7, sb\n\
@@ -1195,7 +1195,25 @@ _080D1744: .4byte gSolidFnTable\n\
  .syntax divided\n");
 }
 
-INCASM("asm/solid/actor.inc");
+INCASM("asm/solid/actor_a.inc");
+
+void ActorOperator_Update(struct Solid* p) {
+  switch ((p->s).mode[1]) {
+    case 0:
+      (p->s).coord.x += ((p->s).work[1] != 0) ? 0xC00 : -0xC00;
+      (p->s).coord.y = FUN_08009f6c((p->s).coord.x, (p->s).coord.y) - 0x1B00;
+      SetMotion(&p->s, 0xC900 | (p->s).work[1]);
+      (p->s).renderPrio = 0x1F;
+      SET_XFLIP(p, (p->s).work[1] == 0);
+      (p->s).mode[1]++;
+      FALLTHROUGH;
+    case 1:
+      UpdateEntityAnim(&p->s);
+      break;
+  }
+}
+
+INCASM("asm/solid/actor_b.inc");
 
 // ------------------------------------------------------------------------------------------------------------------------------------
 
