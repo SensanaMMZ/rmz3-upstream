@@ -21,7 +21,7 @@ const ProjectileRoutine gShotcounterBulletRoutine = {
 // clang-format on
 
 Entity* CreateShotcounterBullet(Coords32* c, Coords32* d, u8 r2, u8 r3) {
-  Entity* p = AllocEntityLast(gProjectileHeaderPtr);
+  Entity* p = (Entity*)AllocEntityLast(gProjectileHeaderPtr);
   if (p != NULL) {
     INIT_PROJECTILE_ROUTINE(p, PROJECTILE_SHOTCOUNTER_BULLET);
     p->work[0] = r2;
@@ -34,7 +34,7 @@ Entity* CreateShotcounterBullet(Coords32* c, Coords32* d, u8 r2, u8 r3) {
   return p;
 }
 
-NAKED static void ShotcounterBullet_Init(Projectile* p) {
+static void ShotcounterBullet_Init(Projectile* p) {
   asm(".syntax unified\n\
 	push {r4, r5, r6, r7, lr}\n\
 	adds r6, r0, #0\n\
@@ -142,13 +142,17 @@ static void ShotcounterBullet_Update(Projectile* p) {
     p->flags &= ~DISPLAY;
     EXIT_BODY(p);
     SET_PROJECTILE_ROUTINE(p, ENTITY_DIE);
-    ShotcounterBullet_Die(p);
+    ShotcounterBullet_Die((Projectile*)p);
     return;
   }
-  (sUpdates[p->mode[1]])(p);
+  (sUpdates[p->mode[1]])((void*)p);
 }
 
-INCASM("asm/projectile/shotcounter_bullet.inc");
+INCASM("asm/projectile/shotcounter_bullet_a.inc");
+
+void nop_0809ceac(Projectile* p) {}
+
+INCASM("asm/projectile/shotcounter_bullet_b.inc");
 
 static const struct Collision sCollisions[2] = {
     {
