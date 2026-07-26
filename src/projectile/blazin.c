@@ -84,7 +84,7 @@ BlazinProjectile* blazin_0809e620(Entity* e, Coords32* c, Coords32* d) {
 
 // --------------------------------------------
 
-NAKED static void Projectile9_Init(BlazinProjectile* p) {
+static void Projectile9_Init(BlazinProjectile* p) {
   asm(".syntax unified\n\
 	push {r4, r5, r6, lr}\n\
 	adds r5, r0, #0\n\
@@ -248,7 +248,35 @@ static void FUN_0809e7b4(BlazinProjectile* p) {
   p->mode[2] = 0;
 }
 
-INCASM("asm/projectile/blazin.inc");
+INCASM("asm/projectile/blazin_a.inc");
+
+void FUN_0809e9b8(BlazinProjectile* p) {
+  p->mode[1] = 1;
+  p->mode[2] = 0;
+}
+
+INCASM("asm/projectile/blazin_b.inc");
+
+void FUN_0809eadc(BlazinProjectile* p) {
+  p->mode[1] = 1;
+  p->mode[2] = 0;
+}
+
+INCASM("asm/projectile/blazin_c.inc");
+
+void FUN_0809ec18(BlazinProjectile* p) {
+  p->mode[1] = 1;
+  p->mode[2] = 0;
+}
+
+INCASM("asm/projectile/blazin_d.inc");
+
+void FUN_0809edfc(BlazinProjectile* p) {
+  p->mode[1] = 1;
+  p->mode[2] = 0;
+}
+
+INCASM("asm/projectile/blazin_e.inc");
 
 // --------------------------------------------
 
